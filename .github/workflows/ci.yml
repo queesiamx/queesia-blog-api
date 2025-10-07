@@ -4,14 +4,28 @@ on:
     branches: [ main ]
   push:
     branches: [ main ]
+  workflow_dispatch: {}
+
 jobs:
-  build:
+  build-test-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+          cache: npm
+
+      - name: Install deps (ci→install)
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+
       - run: npm run build --if-present
       - run: npm test --if-present
+      - run: npm run lint --if-present
